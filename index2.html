@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Haiku Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1em;
+            font-style: italic;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 1.1em;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+            font-family: 'Georgia', serif;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            text-align: center;
+            color: #667eea;
+            margin-top: 20px;
+            font-size: 1.1em;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #ddd;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 25px;
+            background: #f9f9f9;
+            border-left: 4px solid #667eea;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .haiku {
+            white-space: pre-wrap;
+            line-height: 1.8;
+            color: #333;
+            font-size: 1.1em;
+            text-align: center;
+        }
+
+        .error {
+            background: #fee;
+            border-left-color: #e77;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .error h2 {
+            color: #c33;
+            margin-bottom: 10px;
+        }
+
+        .error p {
+            color: #666;
+            font-family: monospace;
+            font-size: 0.9em;
+            word-break: break-all;
+        }
+
+        .success h2 {
+            color: #667eea;
+        }
+
+        .reset-button {
+            margin-top: 15px;
+            background: #ddd;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .reset-button:hover {
+            background: #ccc;
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✨ Haiku Generator</h1>
+        <p class="subtitle">Create a haiku personalized just for you</p>
+
+        <div id="form-section">
+            <div class="form-group">
+                <label for="name">Your Name</label>
+                <input
+                    type="text"
+                    id="name"
+                    placeholder="Enter your name"
+                    autocomplete="off"
+                >
+            </div>
+            <button id="submit-btn">Generate Haiku</button>
+        </div>
+
+        <div id="loading" class="loading" style="display: none;">
+            <span class="spinner"></span>Crafting your haiku...
+        </div>
+
+        <div id="result" class="result success">
+            <h2>Your Haiku</h2>
+            <div class="haiku" id="haiku-text"></div>
+            <button class="reset-button" onclick="resetForm()">Generate Another</button>
+        </div>
+
+        <div id="error" class="result error">
+            <h2>Oops! Something went wrong</h2>
+            <p id="error-text"></p>
+            <button class="reset-button" onclick="resetForm()">Try Again</button>
+        </div>
+    </div>
+
+    <script>
+        const nameInput = document.getElementById('name');
+        const submitBtn = document.getElementById('submit-btn');
+        const loadingDiv = document.getElementById('loading');
+        const resultDiv = document.getElementById('result');
+        const errorDiv = document.getElementById('error');
+        const haikusText = document.getElementById('haiku-text');
+        const errorText = document.getElementById('error-text');
+
+        const WEBHOOK_URL = 'https://rafciujaw.app.n8n.cloud/webhook/ca89c49d-1bcd-48f5-b4fa-034dd41f2568';
+
+        submitBtn.addEventListener('click', generateHaiku);
+        nameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') generateHaiku();
+        });
+
+        async function generateHaiku() {
+            const name = nameInput.value.trim();
+
+            if (!name) {
+                alert('Please enter your name');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            loadingDiv.style.display = 'block';
+            resultDiv.classList.remove('show');
+            errorDiv.classList.remove('show');
+
+            try {
+                const url = `${WEBHOOK_URL}?name=${encodeURIComponent(name)}`;
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    throw new Error(`${response.status} ${response.statusText}`);
+                }
+
+                const haiku = await response.text();
+                displayResult(haiku);
+            } catch (err) {
+                displayError(err);
+            } finally {
+                submitBtn.disabled = false;
+                loadingDiv.style.display = 'none';
+            }
+        }
+
+        function displayResult(haiku) {
+            haikusText.textContent = haiku;
+            resultDiv.classList.add('show');
+            errorDiv.classList.remove('show');
+        }
+
+        function displayError(error) {
+            errorText.textContent = error.message || 'Failed to generate haiku. Check the webhook URL and try again.';
+            errorDiv.classList.add('show');
+            resultDiv.classList.remove('show');
+        }
+
+        function resetForm() {
+            nameInput.value = '';
+            nameInput.focus();
+            resultDiv.classList.remove('show');
+            errorDiv.classList.remove('show');
+        }
+    </script>
+</body>
+</html>
